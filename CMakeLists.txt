@@ -4,31 +4,9 @@ project(vlcrm VERSION 0.1.0 LANGUAGES C)
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-if(WIN32)
-  add_compile_definitions(
-      NOMINMAX # Removes legacy windef.h min and max macro
-  )
-endif()
-
-if(MSVC)
-    add_compile_definitions(
-        _CRT_SECURE_NO_WARNINGS # Disable CRT secure warning to allow cross-platform stdlib usage
-    )
-    add_compile_options(
-        /W4 # Enable informational warnings (1-4 level)
-        /WX # Treat warnings as errors
-        /utf-8 # Enable UTF-8 support
-        /Zc:wchar_t # wchar_t as builtin type
-        /Zc:forScope # Removes possibility to use out of scope loop variables
-        # Removes unreferenced data or functions that are COMDATs, or that only have internal linkage. 
-        # Greatly reduces binary size
-        /Zc:inline
-    )
-else()
-    add_compile_options(-Wall -Wextra -Werror=return-type)
-    if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-        add_compile_options(-Wno-unreachable-code-generic-assoc)
-    endif()
+add_compile_options(-Wall -Wextra -Werror=return-type)
+if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+    add_compile_options(-Wno-unreachable-code-generic-assoc)
 endif()
 
 if(NOT VLC_HEADERS)    

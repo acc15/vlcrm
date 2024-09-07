@@ -66,7 +66,7 @@ static int on_key_press(vlc_object_t * p_this, char const * name, vlc_value_t ol
     VLC_UNUSED(oldval);
     
     intf_thread_t *intf = (intf_thread_t*) p_data;
-    uint_fast32_t key = newval.i_int;
+    uint_fast32_t key = (uint_fast32_t) newval.i_int;
     if (key == intf->p_sys->key_remove) {
         mark_item(intf, false);
     } else if (key == intf->p_sys->key_delete) {
@@ -96,7 +96,8 @@ static int on_playlist_item_changed(vlc_object_t *p_this, char const * name, vlc
     } else {
         playlist_item_t* cur_item = playlist_CurrentPlayingItem(playlist);
         if (playlist_CurrentSize(playlist) == 1 || cur_item == NULL || cur_item->i_id != rm_item->i_id) { 
-            if (atomic_exchange(&intf->p_sys->pending_removal_id, 0) == rm_id) {
+            if (intf->p_sys->pending_removal_id == rm_id) {
+            //if (atomic_exchange(&intf->p_sys->pending_removal_id, 0) == rm_id) {
                 if (rm_id & DELETE_ID_BIT) {
                     delete_item(intf, playlist, rm_item);
                 } else {
@@ -146,7 +147,7 @@ vlc_module_begin()
     set_shortname(MODULE_STRING)
     set_description("Plugin for deleting currently playing file")
     set_capability("interface", 0)
-    set_callbacks(plugin_open, plugin_close)
+    set_callbacks(&plugin_open, &plugin_close)
     set_category(CAT_INTERFACE)
     set_subcategory(SUBCAT_INTERFACE_HOTKEYS)
     set_section("Hotkeys (VLC must be restarted for changes to take effect)", NULL)

@@ -21,14 +21,16 @@ Then follow [Running](#running) guide
 
 * VLC 3.0.20+ must be installed. Previous versions may work, but not tested
 * CMake 3.29.3
-* Working C compiler (`MSVC`, `GCC` or `Clang`) with C 17 support
+* Linux or MacOS with C compiler (`GCC` or `Clang`) with C 17 support
 
-Compiling requires `libvlccore` headers to be available.
+VLC recommends compile Windows binaries using MinGW: https://wiki.videolan.org/Win32Compile
+
+Compilation also requires `libvlccore` headers to be available.
 
 On some systems (for example on ArchLinux) they are already in `vlc` package 
 and located in `/usr/include/vlc/plugins/` directory.
 
-On MacOS and Windows VLC installation they are absent, so it's required to download VLC sources to get those headers.
+On MacOS and Windows VLC installation they are absent by default, so it's required to download VLC sources to get those headers.
 
 CMake will automatically download them using `FetchContent` feature if they are not available.
 
@@ -71,6 +73,11 @@ To specify your own custom directories you can run `cmake` as follows:
 
 Plugin must be explicitly enabled using VLC settings interface:
 ![enable_vlcrm](images/enable_vlcrm.png)
-Restart VLC and plugin should activate. You can check it's settings page:
+Restart VLC and plugin should activate. 
+
+You can check it's settings page:
 ![vlcrm_settings](images/vlcrm_settings.png)
-Then just use corresponding key combination
+
+Then just use corresponding key combination. 
+
+Note that hotkeys works only in main Video output window (not in playlist, settings windows)
