@@ -12,7 +12,7 @@ You must place it to VLC plugins directory:
 * MacOS: `/Applications/VLC.app/Contents/MacOS/plugins`
 * Linux: `/usr/lib/vlc/plugins/misc`
 
-Then follow [#Running]
+Then follow [Running](#running) guide
 
 ## Building
 
