@@ -73,5 +73,3 @@ add_library(vlcrm_plugin SHARED main.c)
 target_link_libraries(vlcrm_plugin vlccore)
 
 install(TARGETS vlcrm_plugin DESTINATION ${VLC_PLUGINS})
-
-# testing(TARGET vlc-rm SRC ...)
