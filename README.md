@@ -4,8 +4,10 @@ Simple VLC plugin which allows to delete currently playing file using hotkey.
 
 ## Prebuilt binaries
 
-* Linux (x86_64): https://github.com/acc15/vlcrm/releases/download/v1.0/libvlcrm_plugin.so
-* MacOS (ARM64, Apple Silicon): https://github.com/acc15/vlcrm/releases/download/v1.0/libvlcrm_plugin.dylib
+* [Windows x86 32-bit](https://github.com/acc15/vlcrm/releases/download/v1.0/libvlcrm_plugin_x86.dll) (must be renamed to `libvlcrm_plugin.dll` before copying to plugins directory)
+* [Windows x64](https://github.com/acc15/vlcrm/releases/download/v1.0/libvlcrm_plugin.dll)
+* [Linux x64](https://github.com/acc15/vlcrm/releases/download/v1.0/libvlcrm_plugin.so)
+* [MacOS (ARM64, Apple Silicon)](https://github.com/acc15/vlcrm/releases/download/v1.0/libvlcrm_plugin.dylib)
 
 You must place it to VLC plugins directory:
 
@@ -20,8 +22,9 @@ Then follow [Running](#running) guide
 ### Prerequisites
 
 * VLC 3.0.20+ must be installed. Previous versions may work, but not tested
-* CMake 3.29.3
+* CMake 3.20.0
 * Linux or MacOS with C compiler (`GCC` or `Clang`) with C 17 support
+* MinGW-w64 to build Windows binaries
 
 VLC recommends compile Windows binaries using MinGW: https://wiki.videolan.org/Win32Compile
 
@@ -32,11 +35,30 @@ and located in `/usr/include/vlc/plugins/` directory.
 
 On MacOS and Windows VLC installation they are absent by default, so it's required to download VLC sources to get those headers.
 
-CMake will automatically download them using `FetchContent` feature if they are not available.
+CMake will automatically download them using `FetchContent` feature if they are not specified using `-DVLC_HEADERS=<path to VLC sources>`.
 
 ### Compile
 
     cmake -DCMAKE_BUILD_TYPE=Release -B build && cmake --build build
+
+#### Windows
+
+Windows build requires either `MSYS2` or some kind of Linux virtual machine (`Docker`, `WSL` or `VirtualBox`)
+
+`MSYS2` or linux machine must have `mingw-w64` installed, to install on Ubuntu:
+
+    sudo apt-get install mingw-w64
+
+then building is pretty straight-forward using `mingw` compiler:
+
+    cmake \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_SYSTEM_NAME=Windows \
+        -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \ # or i686-w64-mingw32-gcc to build 32-bit binary
+        -DCMAKE_C_FLAGS="-s" \ # to reduce binary size
+        -DVLC_LIB="<path to VLC installation available from virtual machine>" \
+        -DVLC_PLUGINS="<path to VLC installation available from virtual machine>/plugins/misc" \
+        -B build && cmake --build build
 
 #### Additional configuration
 
