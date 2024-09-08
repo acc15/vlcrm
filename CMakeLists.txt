@@ -5,7 +5,7 @@ set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 add_compile_options(-Wall -Wextra -Werror=return-type)
-if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+if("${CMAKE_C_COMPILER_ID}" MATCHES "Clang")
     add_compile_options(-Wno-unreachable-code-generic-assoc)
 endif()
 
