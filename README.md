@@ -4,6 +4,7 @@ Simple VLC plugin which allows to delete currently playing file using hotkey.
 
 ## Prebuilt binaries
 
+* Linux (x86_64): https://github.com/acc15/vlcrm/releases/download/v1.0/libvlcrm_plugin.so
 * MacOS (ARM64, Apple Silicon): https://github.com/acc15/vlcrm/releases/download/v1.0/libvlcrm_plugin.dylib
 
 You must place it to VLC plugins directory:

@@ -66,9 +66,10 @@ static int on_key_press(vlc_object_t * p_this, char const * name, vlc_value_t ol
     VLC_UNUSED(oldval);
     
     intf_thread_t *intf = (intf_thread_t*) p_data;
-    if (intf->p_sys->key_remove == newval.i_int) {
+    uint_fast32_t key = newval.i_int;
+    if (key == intf->p_sys->key_remove) {
         mark_item(intf, false);
-    } else if (intf->p_sys->key_delete == newval.i_int) {
+    } else if (key == intf->p_sys->key_delete) {
         mark_item(intf, true);
     }
     return VLC_SUCCESS;

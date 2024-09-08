@@ -25,7 +25,10 @@ if(MSVC)
         /Zc:inline
     )
 else()
-    add_compile_options(-Wall -Wextra -Wpedantic -Werror=return-type -Wno-unreachable-code-generic-assoc)
+    add_compile_options(-Wall -Wextra -Werror=return-type)
+    if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+        add_compile_options(-Wno-unreachable-code-generic-assoc)
+    endif()
 endif()
 
 if(NOT VLC_HEADERS)    
