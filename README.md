@@ -45,7 +45,7 @@ CMake will automatically download them using `FetchContent` feature if they are 
 
 Windows build requires either `MSYS2` or some kind of Linux virtual machine (`Docker`, `WSL` or `VirtualBox`)
 
-`MSYS2` or linux machine must have `mingw-w64` installed, to install on Ubuntu:
+`MSYS2` or linux machine must have `mingw-w64` installed, to install it on Ubuntu:
 
     sudo apt-get install mingw-w64
 
@@ -56,15 +56,14 @@ then building is pretty straight-forward using `mingw` compiler:
         -DCMAKE_SYSTEM_NAME=Windows \
         -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \ # or i686-w64-mingw32-gcc to build 32-bit binary
         -DCMAKE_C_FLAGS="-s" \ # to reduce binary size
-        -DVLC_LIB="<path to VLC installation available from virtual machine>" \
-        -DVLC_PLUGINS="<path to VLC installation available from virtual machine>/plugins/misc" \
+        -DVLC_LIB="<path to Windows VLC installation available from virtual machine>" \
         -B build && cmake --build build
 
 #### Additional configuration
 
 By default CMake will assume default VLC install locations:
 
-* Windows: `C:\Program Files\VideoLAN\VLC`
+* Windows: `C:\Program Files\VideoLAN\VLC` (`/mnt/c/Program Files/VideoLAN/VLC` will be used actually assuming WSL by default as `VLC_LIB`)
 * MacOS: `/Applications/VLC.app/Contents/MacOS`
 * Linux: `/usr/lib`
 
@@ -72,11 +71,11 @@ and also it will download VLC sources if they aren't found in `/usr/include/vlc/
 
 There are 3 CMake variables which allows to customize where to search for `libvlccore` headers, library and where to put builded plugin:
 
-| Name          | Description                            |
-| ------------- | -------------------------------------- |
-| `VLC_HEADERS` | Path to `libvlccore` headers directory |
-| `VLC_LIB`     | Path to `libvlccore` library directory |
-| `VLC_PLUGINS` | Path to plugin installation directory  |
+| Name          | Description                                                                             |
+| ------------- | --------------------------------------------------------------------------------------- |
+| `VLC_HEADERS` | Path to `libvlccore` headers directory. it's `include` directory of VLC sources         |
+| `VLC_LIB`     | Path to `libvlccore` library directory. Directory with `libvlccore.[dll/so/dylib]` file |
+| `VLC_PLUGINS` | Path to plugin installation directory                                                   |
 
 To specify your own custom directories you can run `cmake` as follows:
 
