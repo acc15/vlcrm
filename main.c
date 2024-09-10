@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/errno.h>
 
 #include <vlc_common.h>
 #include <vlc_plugin.h>
@@ -23,7 +24,8 @@ void delete_item(intf_thread_t* intf, playlist_t* playlist, playlist_item_t* ite
     char* local_path = vlc_uri2path(item->p_input->psz_uri);
     playlist_NodeDelete(playlist, item);
     if (remove(local_path) == -1) {
-        msg_Err(intf, "Unable to delete playlist item, id=%d, path=%s", item->i_id, local_path);
+        msg_Err(intf, "Unable to delete playlist item, id=%d, path=%s, error=%s", 
+            item->i_id, local_path, strerror(errno));
     } else {
         msg_Info(intf, "Playlist item has been deleted, id=%d, path=%s", item->i_id, local_path);
     }
