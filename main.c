@@ -96,8 +96,7 @@ static int on_playlist_item_changed(vlc_object_t *p_this, char const * name, vlc
     } else {
         playlist_item_t* cur_item = playlist_CurrentPlayingItem(playlist);
         if (playlist_CurrentSize(playlist) == 1 || cur_item == NULL || cur_item->i_id != rm_item->i_id) { 
-            if (intf->p_sys->pending_removal_id == rm_id) {
-            //if (atomic_exchange(&intf->p_sys->pending_removal_id, 0) == rm_id) {
+            if (atomic_exchange(&intf->p_sys->pending_removal_id, 0) == rm_id) {
                 if (rm_id & DELETE_ID_BIT) {
                     delete_item(intf, playlist, rm_item);
                 } else {
