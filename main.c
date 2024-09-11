@@ -146,7 +146,7 @@ static void plugin_close(vlc_object_t *obj) {
 vlc_module_begin()
     set_text_domain(MODULE_STRING)
     set_shortname(MODULE_STRING)
-    set_description("Plugin for deleting currently playing file")
+    set_description("Plugin for deleting a currently playing file")
     set_capability("interface", 0)
     set_callbacks(&plugin_open, &plugin_close)
     set_category(CAT_INTERFACE)
