@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <sys/errno.h>
+#include <errno.h>
 
 #include <vlc_common.h>
 #include <vlc_plugin.h>
