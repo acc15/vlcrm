@@ -136,11 +136,11 @@ static void plugin_close(vlc_object_t *obj) {
 }
 
 #ifdef __APPLE__
-#   define DEFAULT_REMOVE_HOTKEY "Shift+Command+r"
-#   define DEFAULT_DELETE_HOTKEY "Shift+Command+d"
+#   define DEFAULT_REMOVE_HOTKEY "Command+Shift+n"
+#   define DEFAULT_DELETE_HOTKEY "Command+Shift+d"
 #else
-#   define DEFAULT_REMOVE_HOTKEY "Shift+Ctrl+r"
-#   define DEFAULT_DELETE_HOTKEY "Shift+Ctrl+d"
+#   define DEFAULT_REMOVE_HOTKEY "Ctrl+Shift+n"
+#   define DEFAULT_DELETE_HOTKEY "Ctrl+Shift+d"
 #endif
 
 vlc_module_begin()
