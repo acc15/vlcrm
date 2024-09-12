@@ -1,4 +1,3 @@
-# latest available version on Ubuntu
 cmake_minimum_required(VERSION 3.30.3)
 project(vlcrm VERSION 0.1.0 LANGUAGES C)
 
@@ -33,7 +32,7 @@ function(download_extract_if_absent url path dir)
 endfunction()
 
 if(NOT VLC_HEADERS)
-    if(UNIX AND NOT APPLE AND EXISTS /usr/include/vlc/plugins)
+    if(EXISTS /usr/include/vlc/plugins)
         set(VLC_HEADERS_DEFAULT /usr/include/vlc/plugins)
     else()
         download_extract_if_absent(
