@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.30.3)
 project(vlcrm VERSION 0.1.0 LANGUAGES C)
 
-set(CMAKE_C_STANDARD 17)
+set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_SKIP_RPATH true)
 
