@@ -9,10 +9,11 @@ build() {
         tc="--toolchain ./toolchains/$3.cmake"
     fi
     rm -rf build
+    # shellcheck disable=SC2086
     cmake -DCMAKE_BUILD_TYPE=Release $tc -B build
     cmake --build build
-    mkdir -p dist/$1
-    cp build/libvlcrm_plugin.$2 dist/$1
+    mkdir -p "dist/$1"
+    cp "build/libvlcrm_plugin.$2" "dist/$1"
 }
 
 if [ "$(uname)" = Darwin ]; then

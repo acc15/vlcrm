@@ -14,6 +14,11 @@
 
 #define DELETE_ID_BIT 0x40000000
 
+// fix for clang (it doesn't allow qualified (`const`, `volatile`, etc) types in `_Generic` macro, even with C11)
+// see https://stackoverflow.com/questions/77881246/lvalue-conversion-of-generic-controlling-expression-involving-array-clang-warni
+#undef VLC_OBJECT
+#define VLC_OBJECT(x) ((vlc_object_t *)&(x)->obj)
+
 struct intf_sys_t {
     atomic_int pending_removal_id;
     uint_fast32_t key_remove;
@@ -130,7 +135,7 @@ static int plugin_open(vlc_object_t *obj) {
 static void plugin_close(vlc_object_t *obj) {
     intf_thread_t *intf = (intf_thread_t *) obj;
     var_DelCallback(pl_Get(intf), "item-change", on_playlist_item_changed, intf);
-    var_DelCallback(intf->obj.libvlc, "key-pressed", on_key_press, intf );
+    var_DelCallback(intf->obj.libvlc, "key-pressed", on_key_press, intf);
     free(intf->p_sys);
     msg_Dbg(intf, "Closing");
 }
