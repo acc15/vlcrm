@@ -14,8 +14,11 @@
 
 #define DELETE_ID_BIT 0x40000000
 
-// fix for clang (it doesn't allow qualified (`const`, `volatile`, etc) types in `_Generic` macro, even with C11)
-// see https://stackoverflow.com/questions/77881246/lvalue-conversion-of-generic-controlling-expression-involving-array-clang-warni
+//
+// Fix for clang:
+// It doesn't allow qualified (`const`, `volatile`, etc) types in `_Generic` macro, even with C11
+// See https://stackoverflow.com/a/77881417/809107
+//
 #undef VLC_OBJECT
 #define VLC_OBJECT(x) ((vlc_object_t *)&(x)->obj)
 
