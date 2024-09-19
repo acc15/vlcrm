@@ -12,18 +12,10 @@
 #include <vlc_url.h>
 #include <vlc_atomic.h>
 
-#define DELETE_ID_BIT 0x40000000
-
-//
-// Fix for clang:
-// It doesn't allow qualified (`const`, `volatile`, etc) types in `_Generic` macro, even with C11
-// See https://stackoverflow.com/a/77881417/809107
-//
-#undef VLC_OBJECT
-#define VLC_OBJECT(x) ((vlc_object_t *)&(x)->obj)
+static const unsigned int DELETE_ID_MASK = 1U << (sizeof(unsigned int) * CHAR_BIT - 1);
 
 struct intf_sys_t {
-    atomic_int pending_removal_id;
+    atomic_uint pending_removal_id;
     uint_fast32_t key_remove;
     uint_fast32_t key_delete;
 };
@@ -50,7 +42,7 @@ void mark_item(intf_thread_t *intf, bool delete) {
     playlist_Lock(playlist);
     playlist_item_t* item = playlist_CurrentPlayingItem(playlist);
     if (item != NULL && item->p_input != NULL && item->p_input->i_type == ITEM_TYPE_FILE) {
-        atomic_store(&intf->p_sys->pending_removal_id, (delete ? DELETE_ID_BIT : 0) | item->i_id);
+        atomic_store(&intf->p_sys->pending_removal_id, (delete ? DELETE_ID_MASK : 0) | (unsigned int) item->i_id);
         if (playlist_CurrentSize(playlist) == 1) {
             playlist_Control(playlist, PLAYLIST_STOP, true);
         } else {
@@ -60,13 +52,14 @@ void mark_item(intf_thread_t *intf, bool delete) {
     playlist_Unlock(playlist);
 }
 
-uint_fast32_t get_key(intf_thread_t* intf, const char* var_name) {
+static uint_fast32_t get_key(intf_thread_t* intf, const char* var_name) {
+    uint_fast32_t key = 0;
+
     char* remove_str = var_InheritString(intf, var_name);
-    if (remove_str == NULL) {
-        return 0;
+    if (remove_str != NULL) {
+        key = vlc_str2keycode(remove_str);
+        free(remove_str);
     }
-    uint_fast32_t key = vlc_str2keycode(remove_str);
-    free(remove_str);
     return key;
 }
 
@@ -91,7 +84,7 @@ static int on_playlist_item_changed(vlc_object_t *p_this, char const * name, vlc
     VLC_UNUSED(newval);
 
     intf_thread_t *intf = (intf_thread_t *) p_data;
-    int rm_id = atomic_load(&intf->p_sys->pending_removal_id);
+    unsigned int rm_id = atomic_load(&intf->p_sys->pending_removal_id);
     if (rm_id == 0) {
         return VLC_SUCCESS;
     }
@@ -99,15 +92,15 @@ static int on_playlist_item_changed(vlc_object_t *p_this, char const * name, vlc
     playlist_t* playlist = (playlist_t*) p_this;
     playlist_Lock(playlist);
     
-    playlist_item_t* rm_item = playlist_ItemGetById(playlist, rm_id & ~DELETE_ID_BIT);
+    playlist_item_t* rm_item = playlist_ItemGetById(playlist, (int)(rm_id & ~DELETE_ID_MASK));
     if (rm_item == NULL) { 
-        // pending item no more in playlist
+        // item to be removed is no longer in playlist
         atomic_store(&intf->p_sys->pending_removal_id, 0);
     } else {
         playlist_item_t* cur_item = playlist_CurrentPlayingItem(playlist);
         if (playlist_CurrentSize(playlist) == 1 || cur_item == NULL || cur_item->i_id != rm_item->i_id) { 
             if (atomic_exchange(&intf->p_sys->pending_removal_id, 0) == rm_id) {
-                if (rm_id & DELETE_ID_BIT) {
+                if (rm_id & DELETE_ID_MASK) {
                     delete_item(intf, playlist, rm_item);
                 } else {
                     remove_item(intf, playlist, rm_item);
@@ -143,14 +136,6 @@ static void plugin_close(vlc_object_t *obj) {
     msg_Dbg(intf, "Closing");
 }
 
-#ifdef __APPLE__
-#   define DEFAULT_REMOVE_HOTKEY "Command+Shift+n"
-#   define DEFAULT_DELETE_HOTKEY "Command+Shift+d"
-#else
-#   define DEFAULT_REMOVE_HOTKEY "Ctrl+Shift+n"
-#   define DEFAULT_DELETE_HOTKEY "Ctrl+Shift+d"
-#endif
-
 vlc_module_begin()
     set_text_domain(MODULE_STRING)
     set_shortname(MODULE_STRING)
@@ -162,12 +147,20 @@ vlc_module_begin()
     set_section("Hotkeys (VLC must be restarted for changes to take effect)", NULL)
     add_string(
         "key-remove-current", 
-        DEFAULT_REMOVE_HOTKEY, 
+#ifdef __APPLE__
+        "Command+Shift+n", 
+#else
+        "Ctrl+Shift+n",
+#endif
         "Remove playing item from playlist", 
         "Removes currently playing item from playlist", false)
     add_string(
         "key-delete-current", 
-        DEFAULT_DELETE_HOTKEY, 
+#ifdef __APPLE__
+        "Command+Shift+d", 
+#else
+        "Ctrl+Shift+d",
+#endif
         "Delete playing file", 
         "Permanently deletes currently playing file", false) 
 vlc_module_end()

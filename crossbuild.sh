@@ -4,16 +4,17 @@ set -eux
 
 build() {
     echo "building $1"
+    build_dir="build/$1"
     tc=""
     if [ -n "${3:-}" ]; then
         tc="--toolchain ./toolchains/$3.cmake"
     fi
-    rm -rf build
+    rm -rf "$build_dir"
     # shellcheck disable=SC2086
-    cmake -DCMAKE_BUILD_TYPE=Release $tc -B build
-    cmake --build build
+    cmake -DCMAKE_BUILD_TYPE=Release $tc -B "$build_dir"
+    cmake --build "$build_dir"
     mkdir -p "dist/$1"
-    cp "build/libvlcrm_plugin.$2" "dist/$1"
+    cp "$build_dir/libvlcrm_plugin.$2" "dist/$1"
 }
 
 if [ "$(uname)" = Darwin ]; then
