@@ -12,10 +12,8 @@
 #include <vlc_url.h>
 #include <vlc_atomic.h>
 
-static const unsigned int DELETE_ID_MASK = 1U << (sizeof(unsigned int) * CHAR_BIT - 1);
-
 struct intf_sys_t {
-    atomic_uint pending_removal_id;
+    atomic_int pending_removal_id;
     uint_fast32_t key_remove;
     uint_fast32_t key_delete;
 };
@@ -42,7 +40,7 @@ void mark_item(intf_thread_t *intf, bool delete) {
     playlist_Lock(playlist);
     playlist_item_t* item = playlist_CurrentPlayingItem(playlist);
     if (item != NULL && item->p_input != NULL && item->p_input->i_type == ITEM_TYPE_FILE) {
-        atomic_store(&intf->p_sys->pending_removal_id, (delete ? DELETE_ID_MASK : 0) | (unsigned int) item->i_id);
+        atomic_store(&intf->p_sys->pending_removal_id, (delete ? -item->i_id : item->i_id));
         if (playlist_CurrentSize(playlist) == 1) {
             playlist_Control(playlist, PLAYLIST_STOP, true);
         } else {
@@ -84,7 +82,7 @@ static int on_playlist_item_changed(vlc_object_t *p_this, char const * name, vlc
     VLC_UNUSED(newval);
 
     intf_thread_t *intf = (intf_thread_t *) p_data;
-    unsigned int rm_id = atomic_load(&intf->p_sys->pending_removal_id);
+    int rm_id = atomic_load(&intf->p_sys->pending_removal_id);
     if (rm_id == 0) {
         return VLC_SUCCESS;
     }
@@ -92,7 +90,7 @@ static int on_playlist_item_changed(vlc_object_t *p_this, char const * name, vlc
     playlist_t* playlist = (playlist_t*) p_this;
     playlist_Lock(playlist);
     
-    playlist_item_t* rm_item = playlist_ItemGetById(playlist, (int)(rm_id & ~DELETE_ID_MASK));
+    playlist_item_t* rm_item = playlist_ItemGetById(playlist, abs(rm_id));
     if (rm_item == NULL) { 
         // item to be removed is no longer in playlist
         atomic_store(&intf->p_sys->pending_removal_id, 0);
@@ -100,7 +98,7 @@ static int on_playlist_item_changed(vlc_object_t *p_this, char const * name, vlc
         playlist_item_t* cur_item = playlist_CurrentPlayingItem(playlist);
         if (playlist_CurrentSize(playlist) == 1 || cur_item == NULL || cur_item->i_id != rm_item->i_id) { 
             if (atomic_exchange(&intf->p_sys->pending_removal_id, 0) == rm_id) {
-                if (rm_id & DELETE_ID_MASK) {
+                if (rm_id < 0) {
                     delete_item(intf, playlist, rm_item);
                 } else {
                     remove_item(intf, playlist, rm_item);
