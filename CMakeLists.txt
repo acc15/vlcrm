@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.30.3)
+cmake_minimum_required(VERSION 3.22)
 project(vlcrm VERSION 0.1.0 LANGUAGES C)
 
 set(CMAKE_C_STANDARD 11)
@@ -44,11 +44,21 @@ if(NOT VLC_HEADERS)
 endif()
 set(VLC_HEADERS "${VLC_HEADERS_DEFAULT}" CACHE PATH "Path to libvlccore headers directory")
 
+message("IS CROSSCOMPILING: ${CMAKE_CROSSCOMPILING}")
+
 if(NOT VLC_LIB)
-    if(APPLE)
-        if(CMAKE_SYSTEM_PROCESSOR STREQUAL CMAKE_HOST_SYSTEM_PROCESSOR AND EXISTS /Applications/VLC.app/Contents/MacOS/lib)
-            set(VLC_LIB_DEFAULT /Applications/VLC.app/Contents/MacOS/lib)
-        else()
+    set(VLC_LIB_HINTS "")
+    if(
+        APPLE AND
+        CMAKE_SYSTEM_NAME STREQUAL CMAKE_HOST_SYSTEM_NAME AND
+        CMAKE_SYSTEM_PROCESSOR STREQUAL CMAKE_HOST_SYSTEM_PROCESSOR AND
+        EXISTS /Applications/VLC.app/Contents/MacOS/lib
+    )
+        list(APPEND VLC_LIB_HINTS /Applications/VLC.app/Contents/MacOS/lib)
+    endif()
+    find_library(VLC_LIB_DEFAULT vlccore HINTS ${VLC_LIB_HINTS})
+    if(NOT VLC_LIB_DEFAULT)
+        if(APPLE)
             if (CMAKE_SYSTEM_PROCESSOR STREQUAL arm64)
                 set(VLC_PLATFORM arm64)
             else()
@@ -56,7 +66,7 @@ if(NOT VLC_LIB)
             endif()
             set(VLC_DOWNLOAD_PATH ${DEPS_DIR}/download/${VLC_NAME}-${VLC_PLATFORM}.dmg)
             set(VLC_UNPACK_PATH ${DEPS_DIR}/vlc-bin/macosx/${VLC_PLATFORM})
-            set(VLC_LIB_DEFAULT "${VLC_UNPACK_PATH}/lib")
+            set(VLC_LIB_DEFAULT "${VLC_UNPACK_PATH}/lib/libvlccore.dylib")
             if(NOT EXISTS "${VLC_LIB_DEFAULT}")
                 download_if_absent(
                     "https://download.videolan.org/vlc/last/macosx/${VLC_NAME}-${VLC_PLATFORM}.dmg" 
@@ -66,24 +76,22 @@ if(NOT VLC_LIB)
                 file(COPY ${VLC_COPY_PATHS} DESTINATION "${VLC_UNPACK_PATH}")
                 execute_process(COMMAND hdiutil detach "/Volumes/VLC media player")
             endif()
+        elseif(WIN32)
+            if (CMAKE_SYSTEM_PROCESSOR STREQUAL x86_64)
+                set(VLC_PLATFORM win64)
+            else()
+                set(VLC_PLATFORM win32)
+            endif()
+            download_extract_if_absent(
+                "https://download.videolan.org/vlc/last/${VLC_PLATFORM}/${VLC_NAME}-${VLC_PLATFORM}.zip" 
+                "${DEPS_DIR}/download/${VLC_NAME}-${VLC_PLATFORM}.zip"
+                "${DEPS_DIR}/vlc-bin/windows/${VLC_PLATFORM}"
+            )
+            set(VLC_LIB_DEFAULT "${DEPS_DIR}/vlc-bin/windows/${VLC_PLATFORM}/${VLC_NAME}/libvlccore.dll")
         endif()
-    elseif(UNIX)
-        set(VLC_LIB_DEFAULT /usr/lib)
-    elseif(WIN32)
-        if (CMAKE_SYSTEM_PROCESSOR STREQUAL x86_64)
-            set(VLC_PLATFORM win64)
-        else()
-            set(VLC_PLATFORM win32)
-        endif()
-        download_extract_if_absent(
-            "https://download.videolan.org/vlc/last/${VLC_PLATFORM}/${VLC_NAME}-${VLC_PLATFORM}.zip" 
-            "${DEPS_DIR}/download/${VLC_NAME}-${VLC_PLATFORM}.zip"
-            "${DEPS_DIR}/vlc-bin/windows/${VLC_PLATFORM}"
-        )
-        set(VLC_LIB_DEFAULT "${DEPS_DIR}/vlc-bin/windows/${VLC_PLATFORM}/${VLC_NAME}")
     endif()
 endif()
-set(VLC_LIB ${VLC_LIB_DEFAULT} CACHE PATH "Path to libvlccore library directory")
+set(VLC_LIB ${VLC_LIB_DEFAULT} CACHE PATH "Path to libvlccore library")
 
 if(NOT VLC_PLUGINS)
     if(APPLE)
@@ -100,10 +108,9 @@ set(VLC_PLUGINS ${VLC_PLUGINS_DEFAULT} CACHE PATH "Path to plugin installation d
 message("VLC_HEADERS=${VLC_HEADERS}, VLC_LIB=${VLC_LIB}, VLC_PLUGINS=${VLC_PLUGINS}")
 
 include_directories(${VLC_HEADERS})
-link_directories(${VLC_LIB})
 
 add_compile_definitions(MODULE_STRING="${PROJECT_NAME}" __PLUGIN__)
 add_library(vlcrm_plugin SHARED main.c)
-target_link_libraries(vlcrm_plugin vlccore)
+target_link_libraries(vlcrm_plugin ${VLC_LIB})
 
 install(TARGETS vlcrm_plugin DESTINATION ${VLC_PLUGINS})
