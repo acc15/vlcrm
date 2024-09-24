@@ -15,7 +15,7 @@ jobs:
     - run: cmake --build build
     - uses: actions/upload-artifact@v4
       with:
-        name: libvlcrm_plugin.so
+        name: vlcrm_linux
         path: build/libvlcrm_plugin.so
   win64:
     runs-on: ubuntu-latest
@@ -26,6 +26,36 @@ jobs:
     - run: cmake --build build
     - uses: actions/upload-artifact@v4
       with:
-        name: libvlcrm_plugin.dll
+        name: vlcrm_win64
         path: build/libvlcrm_plugin.dll
-      
+  win32:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - run: sudo apt-get install -y mingw-w64
+    - run: cmake -B build -S . --toolchain ./toolchains/mingw-win32.cmake -DCMAKE_BUILD_TYPE=Release
+    - run: cmake --build build
+    - uses: actions/upload-artifact@v4
+      with:
+        name: vlcrm_win32
+        path: build/libvlcrm_plugin.dll
+  macos-arm64:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    - run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
+    - run: cmake --build build
+    - uses: actions/upload-artifact@v4
+      with:
+        name: vlcrm_macos_arm64
+        path: build/libvlcrm_plugin.dylib
+  macos-intel64:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    - run: cmake -B build -S . --toolchain ./toolchains/macos-intel64.cmake -DCMAKE_BUILD_TYPE=Release
+    - run: cmake --build build
+    - uses: actions/upload-artifact@v4
+      with:
+        name: vlcrm_macos_intel64
+        path: build/libvlcrm_plugin.dylib
