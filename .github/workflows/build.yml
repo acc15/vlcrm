@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ "master" ]
 jobs:
-  build:
+  linux:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -17,3 +17,14 @@ jobs:
       with:
         name: libvlcrm_plugin.so
         path: build/libvlcrm_plugin.so
+  win64:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - run: cmake -B build -S . --toolchain ./toolchains/mingw-win64.cmake -DCMAKE_BUILD_TYPE=Release
+    - run: cmake --build build
+    - uses: actions/upload-artifact@v4
+      with:
+        name: libvlcrm_plugin.dll
+        path: build/libvlcrm_plugin.dll
+      
