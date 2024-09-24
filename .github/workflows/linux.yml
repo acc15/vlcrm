@@ -13,3 +13,7 @@ jobs:
     - run: sudo apt-get install -y libvlccore-dev
     - run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
     - run: cmake --build build
+    - uses: actions/upload-artifact@v4
+      with:
+        name: libvlcrm_plugin.so
+        path: build/libvlcrm_plugin.so

@@ -44,8 +44,6 @@ if(NOT VLC_HEADERS)
 endif()
 set(VLC_HEADERS "${VLC_HEADERS_DEFAULT}" CACHE PATH "Path to libvlccore headers directory")
 
-message("IS CROSSCOMPILING: ${CMAKE_CROSSCOMPILING}")
-
 if(NOT VLC_LIB)
     set(VLC_LIB_HINTS "")
     if(
