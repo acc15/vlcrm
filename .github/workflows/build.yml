@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - run: sudo apt-get install -y libvlccore-dev
+    - run: apt-get install -y libvlccore-dev
     - run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
     - run: cmake --build build
     - uses: actions/upload-artifact@v4
@@ -21,6 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    - run: apt-get install -y mingw-w64
     - run: cmake -B build -S . --toolchain ./toolchains/mingw-win64.cmake -DCMAKE_BUILD_TYPE=Release
     - run: cmake --build build
     - uses: actions/upload-artifact@v4
