@@ -24,10 +24,10 @@ function(download_if_absent url path)
     endif()
 endfunction()
 
-function(download_extract_if_absent url path dir)
+function(download_extract_if_absent url path dir patterns)
     if(NOT EXISTS "${dir}")
         download_if_absent("${url}" "${path}")
-        file(ARCHIVE_EXTRACT INPUT "${path}" DESTINATION "${dir}")
+        file(ARCHIVE_EXTRACT INPUT "${path}" DESTINATION "${dir}" PATTERNS ${patterns})
     endif()
 endfunction()
 
@@ -37,7 +37,8 @@ if(NOT VLC_HEADERS)
         download_extract_if_absent(
             "https://download.videolan.org/vlc/last/${VLC_NAME}.tar.xz" 
             "${DEPS_DIR}/download/${VLC_NAME}.tar.xz" 
-            "${DEPS_DIR}/vlc-src")
+            "${DEPS_DIR}/vlc-src"
+            "${VLC_NAME}/include")
         set(VLC_HEADERS_DEFAULT "${DEPS_DIR}/vlc-src/${VLC_NAME}/include")
     endif()
 endif()
@@ -61,17 +62,19 @@ if(NOT VLC_LIB)
             else()
                 set(VLC_PLATFORM intel64)
             endif()
-            set(VLC_DOWNLOAD_PATH ${DEPS_DIR}/download/${VLC_NAME}-${VLC_PLATFORM}.dmg)
-            set(VLC_UNPACK_PATH ${DEPS_DIR}/vlc-bin/macosx/${VLC_PLATFORM})
-            set(VLC_LIB_DEFAULT "${VLC_UNPACK_PATH}/lib/libvlccore.dylib")
+            set(VLC_DOWNLOAD_PATH "${DEPS_DIR}/download/${VLC_NAME}-${VLC_PLATFORM}.dmg")
+            set(VLC_UNPACK_PATH "${DEPS_DIR}/vlc-bin/macosx/${VLC_PLATFORM}")
+            set(VLC_LIB_DEFAULT "${VLC_UNPACK_PATH}/libvlccore.dylib")
             if(NOT EXISTS "${VLC_LIB_DEFAULT}")
                 download_if_absent(
                     "https://download.videolan.org/vlc/last/macosx/${VLC_NAME}-${VLC_PLATFORM}.dmg" 
                     "${VLC_DOWNLOAD_PATH}")
-                execute_process(COMMAND hdiutil attach "${VLC_DOWNLOAD_PATH}")
-                file(GLOB VLC_COPY_PATHS "/Volumes/VLC media player/VLC.app/Contents/MacOS/*")
+                execute_process(COMMAND hdiutil attach "${VLC_DOWNLOAD_PATH}" 
+                    -readonly -nobrowse -noverify -noautofsck 
+                    -mountpoint /Volumes/vlcrm_extract)
+                file(GLOB VLC_COPY_PATHS /Volumes/vlcrm_extract/VLC.app/Contents/MacOS/lib/libvlccore.*)
                 file(COPY ${VLC_COPY_PATHS} DESTINATION "${VLC_UNPACK_PATH}")
-                execute_process(COMMAND hdiutil detach "/Volumes/VLC media player")
+                execute_process(COMMAND hdiutil detach /Volumes/vlcrm_extract)
             endif()
         elseif(WIN32)
             if (CMAKE_SYSTEM_PROCESSOR STREQUAL x86_64)
@@ -83,6 +86,7 @@ if(NOT VLC_LIB)
                 "https://download.videolan.org/vlc/last/${VLC_PLATFORM}/${VLC_NAME}-${VLC_PLATFORM}.zip" 
                 "${DEPS_DIR}/download/${VLC_NAME}-${VLC_PLATFORM}.zip"
                 "${DEPS_DIR}/vlc-bin/windows/${VLC_PLATFORM}"
+                "${VLC_NAME}/libvlccore.dll"
             )
             set(VLC_LIB_DEFAULT "${DEPS_DIR}/vlc-bin/windows/${VLC_PLATFORM}/${VLC_NAME}/libvlccore.dll")
         endif()
@@ -97,7 +101,7 @@ if(NOT VLC_PLUGINS)
         set(VLC_PLUGINS_DEFAULT /usr/lib/vlc/plugins/misc)
     elseif(WIN32)
         # WSL path to default VLC installation
-        set(VLC_PLUGINS_DEFAULT "/mnt/c/Program Files/VideoLAN/VLC/plugins/misc")
+        set(VLC_PLUGINS_DEFAULT "C:/Program Files/VideoLAN/VLC/plugins/misc")
     endif()
 endif()
 set(VLC_PLUGINS ${VLC_PLUGINS_DEFAULT} CACHE PATH "Path to plugin installation directory")
@@ -108,6 +112,6 @@ include_directories(${VLC_HEADERS})
 
 add_compile_definitions(MODULE_STRING="${PROJECT_NAME}" __PLUGIN__)
 add_library(vlcrm_plugin SHARED main.c)
-target_link_libraries(vlcrm_plugin ${VLC_LIB})
+target_link_libraries(vlcrm_plugin "${VLC_LIB}")
 
-install(TARGETS vlcrm_plugin DESTINATION ${VLC_PLUGINS})
+install(TARGETS vlcrm_plugin DESTINATION "${VLC_PLUGINS}")
