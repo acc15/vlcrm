@@ -32,9 +32,8 @@ function(download_extract_if_absent url path dir)
 endfunction()
 
 if(NOT VLC_HEADERS)
-    if(EXISTS /usr/include/vlc/plugins)
-        set(VLC_HEADERS_DEFAULT /usr/include/vlc/plugins)
-    else()
+    find_path(VLC_HEADERS_DEFAULT NAMES vlc_common.h vlc_plugin.h PATH_SUFFIXES vlc/plugins NO_CACHE)
+    if(NOT VLC_HEADERS_DEFAULT)
         download_extract_if_absent(
             "https://download.videolan.org/vlc/last/${VLC_NAME}.tar.xz" 
             "${DEPS_DIR}/download/${VLC_NAME}.tar.xz" 
@@ -54,7 +53,7 @@ if(NOT VLC_LIB)
     )
         list(APPEND VLC_LIB_HINTS /Applications/VLC.app/Contents/MacOS/lib)
     endif()
-    find_library(VLC_LIB_DEFAULT vlccore HINTS ${VLC_LIB_HINTS})
+    find_library(VLC_LIB_DEFAULT vlccore HINTS ${VLC_LIB_HINTS} NO_CACHE)
     if(NOT VLC_LIB_DEFAULT)
         if(APPLE)
             if (CMAKE_SYSTEM_PROCESSOR STREQUAL arm64)
