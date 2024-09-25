@@ -100,6 +100,7 @@ Restart VLC and plugin should activate.
 You can check it's settings page:
 ![vlcrm_settings](images/vlcrm_settings.png)
 
-Then just use corresponding key combination. 
+Then just use corresponding hotkeys. 
 
-Note that hotkeys works only in main Video output window (not in playlist, settings windows)
+Note that hotkeys work only in main Video output window (not in playlist or settings window).
+If you change the hotkey in the settings page, you will need to restart VLC for the new hotkey to take effect.
