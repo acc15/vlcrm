@@ -4,12 +4,13 @@ Simple VLC plugin which allows to delete currently playing file using hotkey.
 
 ## Prebuilt binaries
 
-* [Windows x86 32-bit](https://github.com/acc15/vlcrm/releases/download/v1.0/libvlcrm_plugin_x86.dll) (must be renamed to `libvlcrm_plugin.dll` before copying to plugins directory)
-* [Windows x64](https://github.com/acc15/vlcrm/releases/download/v1.0/libvlcrm_plugin.dll)
-* [Linux x64](https://github.com/acc15/vlcrm/releases/download/v1.0/libvlcrm_plugin.so)
-* [MacOS (ARM64, Apple Silicon)](https://github.com/acc15/vlcrm/releases/download/v1.0/libvlcrm_plugin.dylib)
+* [Windows x86 32-bit](https://github.com/acc15/vlcrm/releases/download/v1.0/vlcrm_win32.zip) (must be renamed to `libvlcrm_plugin.dll` before copying to plugins directory)
+* [Windows x64](https://github.com/acc15/vlcrm/releases/download/v1.0/vlcrm_win64.zip)
+* [Linux x64](https://github.com/acc15/vlcrm/releases/download/v1.0/vlcrm_linux.zip)
+* [MacOS (Apple Silicon)](https://github.com/acc15/vlcrm/releases/download/v1.0/vlcrm_macos_arm64.zip)
+* [MacOS (Intel)](https://github.com/acc15/vlcrm/releases/download/v1.0/vlcrm_macos_intel64.zip)
 
-You must place it to VLC plugins directory:
+You must extract it to VLC plugins directory:
 
 * Windows: `C:\Program Files\VideoLAN\VLC\plugins\misc`
 * MacOS: `/Applications/VLC.app/Contents/MacOS/plugins`
