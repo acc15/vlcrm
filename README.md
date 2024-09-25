@@ -72,18 +72,18 @@ and also it will download VLC sources if they aren't found in `/usr/include/vlc/
 
 There are 3 CMake variables which allows to customize where to search for `libvlccore` headers, library and where to put builded plugin:
 
-| Name          | Description                                                                             |
-| ------------- | --------------------------------------------------------------------------------------- |
-| `VLC_HEADERS` | Path to `libvlccore` headers directory. it's `include` directory of VLC sources         |
-| `VLC_LIB`     | Path to `libvlccore` library directory. Directory with `libvlccore.[dll/so/dylib]` file |
-| `VLC_PLUGINS` | Path to plugin installation directory                                                   |
+| Name          | Description                                                                     |
+| ------------- | ------------------------------------------------------------------------------- |
+| `VLC_HEADERS` | Path to `libvlccore` headers directory. It's `include` directory of VLC sources |
+| `VLC_LIB`     | Path to `libvlccore.[dll/so/dylib]` shared library                              |
+| `VLC_PLUGINS` | Path to plugin installation directory                                           |
 
 To specify your own custom directories you can run `cmake` as follows:
 
     cmake \
         -DCMAKE_BUILD_TYPE=Release \
         -DVLC_HEADERS=/home/user/vlc_sources/include \
-        -DVLC_LIB=/home/user/myvlc/lib \
+        -DVLC_LIB=/home/user/myvlc/lib/libvlccore.so \
         -DVLC_PLUGINS=/home/user/myvlc/lib/plugins/misc \
         -B build && cmake --build build
 
