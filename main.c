@@ -12,47 +12,31 @@
 #include <vlc_url.h>
 #include <vlc_atomic.h>
 
+enum vlcrm_command_t {
+    NO_OP,
+    REMOVE_ITEM,
+    DELETE_ITEM
+};
+
 struct intf_sys_t {
-    atomic_int pending_removal_id;
+    enum vlcrm_command_t command;
     uint_fast32_t key_remove;
     uint_fast32_t key_delete;
 };
 
-void delete_item(intf_thread_t* intf, playlist_t* playlist, playlist_item_t* item) {
-    char* local_path = vlc_uri2path(item->p_input->psz_uri);
-    playlist_NodeDelete(playlist, item);
-    if (remove(local_path) == -1) {
-        msg_Err(intf, "Unable to delete playlist item, id=%d, path=%s, error=%s", 
-            item->i_id, local_path, strerror(errno));
-    } else {
-        msg_Info(intf, "Playlist item has been deleted, id=%d, path=%s", item->i_id, local_path);
-    }
-    free(local_path);
-}
-
-void remove_item(intf_thread_t* intf, playlist_t* playlist, playlist_item_t* item) {
-    playlist_NodeDelete(playlist, item);
-    msg_Info(intf, "Playlist item has been removed, id=%d", item->i_id);
-}
-
-void mark_item(intf_thread_t *intf, bool delete) {
-    playlist_t* playlist = pl_Get(intf);
-    playlist_Lock(playlist);
-    playlist_item_t* item = playlist_CurrentPlayingItem(playlist);
+void request_stop(intf_thread_t *intf, enum vlcrm_command_t command) {
+    playlist_t* p_playlist = pl_Get(intf);
+    PL_LOCK;
+    playlist_item_t* item = playlist_CurrentPlayingItem(p_playlist);
     if (item != NULL && item->p_input != NULL && item->p_input->i_type == ITEM_TYPE_FILE) {
-        atomic_store(&intf->p_sys->pending_removal_id, (delete ? -item->i_id : item->i_id));
-        if (playlist_CurrentSize(playlist) == 1) {
-            playlist_Control(playlist, PLAYLIST_STOP, true);
-        } else {
-            playlist_Control(playlist, PLAYLIST_SKIP, true, 1);
-        }
+        intf->p_sys->command = command;
+        playlist_Control(p_playlist, PLAYLIST_STOP, true);
     }
-    playlist_Unlock(playlist);
+    PL_UNLOCK;
 }
 
-static uint_fast32_t get_key(intf_thread_t* intf, const char* var_name) {
+static uint_fast32_t parse_key(intf_thread_t* intf, const char* var_name) {
     uint_fast32_t key = 0;
-
     char* remove_str = var_InheritString(intf, var_name);
     if (remove_str != NULL) {
         key = vlc_str2keycode(remove_str);
@@ -69,44 +53,64 @@ static int on_key_press(vlc_object_t * p_this, char const * name, vlc_value_t ol
     intf_thread_t *intf = (intf_thread_t*) p_data;
     uint_fast32_t key = (uint_fast32_t) newval.i_int;
     if (key == intf->p_sys->key_remove) {
-        mark_item(intf, false);
+        request_stop(intf, REMOVE_ITEM);
     } else if (key == intf->p_sys->key_delete) {
-        mark_item(intf, true);
+        request_stop(intf, DELETE_ITEM);
     }
     return VLC_SUCCESS;
 }
 
-static int on_playlist_item_changed(vlc_object_t *p_this, char const * name, vlc_value_t oldval, vlc_value_t newval, void *p_data) {
+static void delete_path(vlc_object_t* p_this, const char* path) {
+    if (remove(path) == -1) {
+        msg_Err(p_this, "Unable to delete playlist item by path=%s, error=%s", path, strerror(errno));
+    } else {
+        msg_Info(p_this, "Playlist item has been deleted, path=%s", path);
+    }
+}
+
+static void pick_and_play_next(playlist_t* p_playlist) {
+    if (playlist_IsEmpty(p_playlist)) {
+        return;
+    }
+    int i_next = var_GetBool( p_playlist, "random" ) ? 0 : p_playlist->i_current_index;
+    if (i_next < 0 || i_next >= p_playlist->current.i_size) {
+        if (!var_GetBool( p_playlist, "loop" )) {
+            return;
+        }
+        i_next = 0;
+    }
+    playlist_Control(p_playlist, PLAYLIST_VIEWPLAY, true, NULL, p_playlist->current.p_elems[i_next]);
+}
+
+static int on_playlist_input_current(vlc_object_t *p_this, char const * name, vlc_value_t oldval, vlc_value_t newval, void *p_data) {
     VLC_UNUSED(name);
     VLC_UNUSED(oldval);
     VLC_UNUSED(newval);
 
     intf_thread_t *intf = (intf_thread_t *) p_data;
-    int rm_id = atomic_load(&intf->p_sys->pending_removal_id);
-    if (rm_id == 0) {
+    enum vlcrm_command_t command = intf->p_sys->command;
+    if (command == NO_OP || newval.p_address != NULL) {
         return VLC_SUCCESS;
     }
+    intf->p_sys->command = NO_OP;
 
-    playlist_t* playlist = (playlist_t*) p_this;
-    playlist_Lock(playlist);
+    playlist_t* p_playlist = (playlist_t*) p_this;
     
-    playlist_item_t* rm_item = playlist_ItemGetById(playlist, abs(rm_id));
-    if (rm_item == NULL) { 
-        // item to be removed is no longer in playlist
-        atomic_store(&intf->p_sys->pending_removal_id, 0);
-    } else {
-        playlist_item_t* cur_item = playlist_CurrentPlayingItem(playlist);
-        if (playlist_CurrentSize(playlist) == 1 || cur_item == NULL || cur_item->i_id != rm_item->i_id) { 
-            if (atomic_exchange(&intf->p_sys->pending_removal_id, 0) == rm_id) {
-                if (rm_id < 0) {
-                    delete_item(intf, playlist, rm_item);
-                } else {
-                    remove_item(intf, playlist, rm_item);
-                }
-            }
+    PL_LOCK;
+    playlist_item_t* p_current = playlist_CurrentPlayingItem(p_playlist);
+    if (p_current != NULL) {
+        char* input_path = NULL;
+        if (command == DELETE_ITEM) {
+            input_path = vlc_uri2path(p_current->p_input->psz_uri);
         }
+        playlist_NodeDelete(p_playlist, p_current);
+        if (input_path != NULL) {
+            delete_path(VLC_OBJECT(intf), input_path);
+            free(input_path);
+        }
+        pick_and_play_next(p_playlist);
     }
-    playlist_Unlock(playlist);
+    PL_UNLOCK;
     return VLC_SUCCESS;
 }
 
@@ -116,22 +120,19 @@ static int plugin_open(vlc_object_t *obj) {
     if (intf->p_sys == NULL) {
         return VLC_ENOMEM;
     }
-    msg_Dbg(intf, "Opening");
-    atomic_init(&intf->p_sys->pending_removal_id, 0);
-    intf->p_sys->key_remove = get_key(intf, "key-remove-current");
-    intf->p_sys->key_delete = get_key(intf, "key-delete-current");
-
+    intf->p_sys->command = NO_OP;
+    intf->p_sys->key_remove = parse_key(intf, "key-remove-current");
+    intf->p_sys->key_delete = parse_key(intf, "key-delete-current");
     var_AddCallback(intf->obj.libvlc, "key-pressed", on_key_press, intf);
-    var_AddCallback(pl_Get(intf), "item-change", on_playlist_item_changed, intf);
+    var_AddCallback(pl_Get(intf), "input-current", on_playlist_input_current, intf);
     return VLC_SUCCESS;
 }
 
 static void plugin_close(vlc_object_t *obj) {
     intf_thread_t *intf = (intf_thread_t *) obj;
-    var_DelCallback(pl_Get(intf), "item-change", on_playlist_item_changed, intf);
+    var_DelCallback(pl_Get(intf), "input-current", on_playlist_input_current, intf);
     var_DelCallback(intf->obj.libvlc, "key-pressed", on_key_press, intf);
     free(intf->p_sys);
-    msg_Dbg(intf, "Closing");
 }
 
 vlc_module_begin()
