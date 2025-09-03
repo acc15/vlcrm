@@ -50,17 +50,15 @@ Windows build requires either `MSYS2` or some kind of Linux virtual machine (`Do
 
 `MSYS2` or linux machine must have `mingw-w64` installed, to install it on Ubuntu:
 
-    sudo apt-get install mingw-w64
+    sudo apt-get install mingw-w64 mingw-w64-common
 
 then building is pretty straight-forward using `mingw` compiler:
 
-    cmake \
+    cmake -B build -S . \
         -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_SYSTEM_NAME=Windows \
-        -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \ # or i686-w64-mingw32-gcc to build 32-bit binary
-        -DCMAKE_C_FLAGS="-s" \ # to reduce binary size
+        -DCMAKE_SYSTEM_PROCESSOR=x86_64 \
         -DVLC_LIB="<path to Windows VLC installation available from virtual machine>" \
-        -B build && cmake --build build
+        && cmake --build build
 
 #### Additional configuration
 
