@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(vlcrm VERSION 0.1.0 LANGUAGES C)
+project(vlcrm LANGUAGES C)
 
 add_subdirectory(lib/trashcan)
 
