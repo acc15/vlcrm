@@ -11,12 +11,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: |
-        sudo apt-get install -y libvlccore-dev mingw-w64
+        sudo apt-get install -y libvlccore-dev mingw-w64 mingw-w64-common
         cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
         cmake --build build
-        cmake -B build/win64 -S . --toolchain ./toolchains/mingw-win64.cmake -DCMAKE_BUILD_TYPE=Release
+        cmake -B build/win64 -S . -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Release --toolchain ./toolchains/mingw-w64.cmake 
         cmake --build build/win64
-        cmake -B build/win32 -S . --toolchain ./toolchains/mingw-win32.cmake -DCMAKE_BUILD_TYPE=Release
+        cmake -B build/win32 -S . -DCMAKE_SYSTEM_PROCESSOR=i686 -DCMAKE_BUILD_TYPE=Release --toolchain ./toolchains/mingw-w64.cmake
         cmake --build build/win32
     - uses: actions/upload-artifact@v4
       with:
@@ -37,7 +37,7 @@ jobs:
     - run: |
         cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
         cmake --build build
-        cmake -B build/intel64 -S . --toolchain ./toolchains/macos-intel64.cmake -DCMAKE_BUILD_TYPE=Release
+        cmake -B build/intel64 -S . -DCMAKE_SYSTEM_PROCESSOR=x86_64  -DCMAKE_BUILD_TYPE=Release --toolchain ./toolchains/macos-intel64.cmake
         cmake --build build/intel64
     - uses: actions/upload-artifact@v4
       with:

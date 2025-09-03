@@ -1,17 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 project(vlcrm VERSION 0.1.0 LANGUAGES C)
 
-include(FetchContent)
-FetchContent_Declare(
-  trashcan
-  GIT_REPOSITORY https://github.com/robertguetzkow/libtrashcan.git
-  GIT_TAG        v1.0.0-alpha
-  OVERRIDE_FIND_PACKAGE
-)
-FetchContent_MakeAvailable(trashcan)
-find_package(trashcan REQUIRED)
-
-# find_package(libtrashcan)
+add_subdirectory(lib/trashcan)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -120,7 +110,7 @@ set(VLC_PLUGINS ${VLC_PLUGINS_DEFAULT} CACHE PATH "Path to plugin installation d
 
 message("VLC_HEADERS=${VLC_HEADERS}, VLC_LIB=${VLC_LIB}, VLC_PLUGINS=${VLC_PLUGINS}")
 
-include_directories(${VLC_HEADERS} ${trashcan_SOURCE_DIR}/src)
+include_directories(${VLC_HEADERS} lib/trashcan)
 
 add_compile_definitions(MODULE_STRING="${PROJECT_NAME}" __PLUGIN__)
 add_library(vlcrm_plugin SHARED main.c)
