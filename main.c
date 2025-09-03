@@ -40,7 +40,7 @@ vlcrm_command_t get_command_by_key(intf_sys_t* intf, uint_fast32_t key) {
     }
 }
 
-void request_stop(intf_thread_t *intf, vlcrm_command_t command) {
+void stop_and_run_command(intf_thread_t *intf, vlcrm_command_t command) {
     playlist_t* p_playlist = pl_Get(intf);
     PL_LOCK;
     playlist_item_t* item = playlist_CurrentPlayingItem(p_playlist);
@@ -52,7 +52,7 @@ void request_stop(intf_thread_t *intf, vlcrm_command_t command) {
 }
 
 uint_fast32_t parse_key(intf_thread_t* intf, const char* var_name) {
-    uint_fast32_t key = 0;
+    uint_fast32_t key = KEY_UNSET;
     char* remove_str = var_InheritString(intf, var_name);
     if (remove_str != NULL) {
         key = vlc_str2keycode(remove_str);
@@ -69,14 +69,13 @@ int on_key_press(vlc_object_t * p_this, char const * name, vlc_value_t oldval, v
     intf_thread_t *intf = (intf_thread_t*) p_data;
     vlcrm_command_t command = get_command_by_key(intf->p_sys, (uint_fast32_t) newval.i_int);
     if (command != VLCRM_NOOP) {
-        request_stop(intf, command);
+        stop_and_run_command(intf, command);
     }
     return VLC_SUCCESS;
 }
 
-void execute_command(vlc_object_t* p_this, vlcrm_command_t command, const char* path) {
-    switch (command) {
-    case VLCRM_TRASH:
+void run_command(vlc_object_t* p_this, vlcrm_command_t command, const char* path) {
+    if (command == VLCRM_TRASH) {
         int status = trashcan_soft_delete(path);
         if (status == 0) {
             msg_Info(p_this, "Playlist item has been moved to Recycle Bin, path=%s", path);
@@ -84,18 +83,12 @@ void execute_command(vlc_object_t* p_this, vlcrm_command_t command, const char* 
             const char* status_text = trashcan_status_msg(status);
             msg_Err(p_this, "Unable to move playlist item to Recycle Bin, path=%s, error=%s", path, status_text);
         }
-        break;
-    
-    case VLCRM_DELETE:
+    } else if (command == VLCRM_DELETE) {
         if (remove(path) != -1) {
             msg_Info(p_this, "Playlist item has been deleted, path=%s", path);
         } else {
             msg_Err(p_this, "Unable to delete playlist item by path=%s, error=%s", path, strerror(errno));
         }
-        break;
-
-    default:
-        break;
     }
 }
 
@@ -136,7 +129,7 @@ static int on_playlist_input_current(vlc_object_t *p_this, char const * name, vl
         }
         playlist_NodeDelete(p_playlist, p_current);
         if (input_path != NULL) {
-            execute_command(VLC_OBJECT(intf), command, input_path);
+            run_command(VLC_OBJECT(intf), command, input_path);
             free(input_path);
         }
         pick_and_play_next(p_playlist);
@@ -184,7 +177,9 @@ vlc_module_begin()
         "Ctrl+Shift+n",
 #endif
         "Remove playing item from playlist", 
-        "Removes currently playing item from playlist", false)
+        "Removes currently playing item from playlist", 
+        false
+    )
     add_string(
         "key-delete-current", 
 #ifdef __APPLE__
@@ -193,7 +188,9 @@ vlc_module_begin()
         "Ctrl+Shift+d",
 #endif
         "Delete playing file", 
-        "Permanently deletes currently playing file", false) 
+        "Permanently deletes currently playing file", 
+        false
+    ) 
     add_string(
         "key-trash-current", 
 #ifdef __APPLE__
@@ -202,5 +199,7 @@ vlc_module_begin()
         "Ctrl+Shift+t",
 #endif
         "Move playing file to Recycle Bin", 
-        "Moves the currently playing file to the Recycle Bin", false) 
+        "Moves the currently playing file to the Recycle Bin", 
+        false
+    ) 
 vlc_module_end()
