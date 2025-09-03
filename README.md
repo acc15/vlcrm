@@ -18,6 +18,12 @@ You must extract it to VLC plugins directory:
 * MacOS: `/Applications/VLC.app/Contents/MacOS/plugins`
 * Linux: `/usr/lib/vlc/plugins/misc`
 
+Then run following command to update VLC plugin cache:
+
+* Windows: `"C:\Program Files\VideoLAN\VLC\vlc-cache-gen.exe" "C:\Program Files\VideoLAN\VLC\plugins"`
+* MacOS: `sudo /Applications/VLC.app/Contents/MacOS/vlc-cache-gen /Applications/VLC.app/Contents/MacOS/plugins`
+* Linux: `sudo /usr/lib/vlc/vlc-cache-gen /usr/lib/vlc/plugins`
+
 Then follow [Running](#running) guide
 
 ## Building
