@@ -18,10 +18,10 @@ You must extract it to VLC plugins directory:
 * MacOS: `/Applications/VLC.app/Contents/MacOS/plugins`
 * Linux: `/usr/lib/vlc/plugins/misc`
 
-Then run following command to update VLC plugin cache:
+And update VLC plugin cache:
 
-* Windows: `"C:\Program Files\VideoLAN\VLC\vlc-cache-gen.exe" "C:\Program Files\VideoLAN\VLC\plugins"`
-* MacOS: `sudo /Applications/VLC.app/Contents/MacOS/vlc-cache-gen /Applications/VLC.app/Contents/MacOS/plugins`
+* Windows: `"C:\Program Files\VideoLAN\VLC\vlc-cache-gen.exe" "C:\Program Files\VideoLAN\VLC\plugins"` (Run as Administrator)
+* MacOS: `/Applications/VLC.app/Contents/MacOS/vlc --reset-plugins-cache`
 * Linux: `sudo /usr/lib/vlc/vlc-cache-gen /usr/lib/vlc/plugins`
 
 Then follow [Running](#running) guide
@@ -99,11 +99,7 @@ To specify your own custom directories you can run `cmake` as follows:
 
 ## Running
 
-Plugin must be explicitly enabled using VLC settings interface:
-![enable_vlcrm](images/enable_vlcrm.png)
-Restart VLC and plugin should activate. 
-
-You can check it's settings page:
+Check plugin settings page:
 ![vlcrm_settings](images/vlcrm_settings.png)
 
 Then just use corresponding hotkeys. 

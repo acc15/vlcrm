@@ -28,12 +28,12 @@ typedef struct intf_sys_t {
     uint_fast32_t key_trash;
 } intf_sys_t;
 
-vlcrm_command_t get_command_by_key(intf_sys_t* intf, uint_fast32_t key) {
-    if (key == intf->key_remove) {
+vlcrm_command_t get_command_by_key(intf_sys_t* sys, uint_fast32_t key) {
+    if (key == sys->key_remove) {
         return VLCRM_REMOVE;
-    } else if (key == intf->key_delete) {
+    } else if (key == sys->key_delete) {
         return VLCRM_DELETE;
-    } else if (key == intf->key_trash) {
+    } else if (key == sys->key_trash) {
         return VLCRM_TRASH;
     } else {
         return VLCRM_NOOP;
@@ -74,21 +74,34 @@ int on_key_press(vlc_object_t * p_this, char const * name, vlc_value_t oldval, v
     return VLC_SUCCESS;
 }
 
+void trash_path(vlc_object_t* p_this, const char* path) {
+    int status = trashcan_soft_delete(path);
+    if (status == 0) {
+        msg_Info(p_this, "Playlist item has been moved to Recycle Bin, path=%s", path);
+    } else {
+        const char* status_text = trashcan_status_msg(status);
+        msg_Err(p_this, "Unable to move playlist item to Recycle Bin, path=%s, error=%s", path, status_text);
+    }
+}
+
+void delete_path(vlc_object_t* p_this, const char* path) {
+    if (remove(path) != -1) {
+        msg_Info(p_this, "Playlist item has been deleted, path=%s", path);
+    } else {
+        msg_Err(p_this, "Unable to delete playlist item by path=%s, error=%s", path, strerror(errno));
+    }
+}
+
 void run_command(vlc_object_t* p_this, vlcrm_command_t command, const char* path) {
-    if (command == VLCRM_TRASH) {
-        int status = trashcan_soft_delete(path);
-        if (status == 0) {
-            msg_Info(p_this, "Playlist item has been moved to Recycle Bin, path=%s", path);
-        } else {
-            const char* status_text = trashcan_status_msg(status);
-            msg_Err(p_this, "Unable to move playlist item to Recycle Bin, path=%s, error=%s", path, status_text);
-        }
-    } else if (command == VLCRM_DELETE) {
-        if (remove(path) != -1) {
-            msg_Info(p_this, "Playlist item has been deleted, path=%s", path);
-        } else {
-            msg_Err(p_this, "Unable to delete playlist item by path=%s, error=%s", path, strerror(errno));
-        }
+    switch (command) {
+    case VLCRM_TRASH:
+        trash_path(p_this, path);
+        break;
+    case VLCRM_DELETE:
+        delete_path(p_this, path);
+        break;
+    default:
+        break;
     }
 }
 
@@ -106,7 +119,7 @@ void pick_and_play_next(playlist_t* p_playlist) {
     playlist_Control(p_playlist, PLAYLIST_VIEWPLAY, true, NULL, p_playlist->current.p_elems[i_next]);
 }
 
-static int on_playlist_input_current(vlc_object_t *p_this, char const * name, vlc_value_t oldval, vlc_value_t newval, void *p_data) {
+int on_playlist_input_current(vlc_object_t *p_this, char const * name, vlc_value_t oldval, vlc_value_t newval, void *p_data) {
     VLC_UNUSED(name);
     VLC_UNUSED(oldval);
     VLC_UNUSED(newval);
@@ -157,7 +170,10 @@ static void plugin_close(vlc_object_t *obj) {
     intf_thread_t *intf = (intf_thread_t *) obj;
     var_DelCallback(pl_Get(intf), "input-current", on_playlist_input_current, intf);
     var_DelCallback(intf->obj.libvlc, "key-pressed", on_key_press, intf);
-    free(intf->p_sys);
+    if (intf->p_sys != NULL) {
+        free(intf->p_sys);
+        intf->p_sys = NULL;
+    }
 }
 
 vlc_module_begin()
