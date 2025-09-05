@@ -1,4 +1,8 @@
 cmake_minimum_required(VERSION 3.22)
+if(APPLE)
+    set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64") # For Universal Binary (Intel and Apple Silicon)
+endif()
+
 project(vlcrm LANGUAGES C)
 
 add_subdirectory(lib/trashcan)
