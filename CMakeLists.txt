@@ -52,29 +52,28 @@ set(VLC_HEADERS "${VLC_HEADERS_DEFAULT}" CACHE PATH "Path to libvlccore headers 
 
 if(NOT VLC_LIB)
     set(VLC_LIB_HINTS "")
-    if(
-        APPLE AND
-        CMAKE_SYSTEM_NAME STREQUAL CMAKE_HOST_SYSTEM_NAME AND
-        CMAKE_SYSTEM_PROCESSOR STREQUAL CMAKE_HOST_SYSTEM_PROCESSOR AND
-        EXISTS /Applications/VLC.app/Contents/MacOS/lib
-    )
-        list(APPEND VLC_LIB_HINTS /Applications/VLC.app/Contents/MacOS/lib)
+    if(APPLE AND EXISTS /Applications/VLC.app/Contents/MacOS/lib)
+        execute_process(
+            COMMAND lipo -archs /Applications/VLC.app/Contents/MacOS/lib/libvlccore.dylib 
+            OUTPUT_VARIABLE HOST_VLC_ARCH
+        )
+        string(FIND "${HOST_VLC_ARCH}" "arm64" HOST_VLC_ARM64)
+        string(FIND "${HOST_VLC_ARCH}" "x86_64" HOST_VLC_X64)
+        if (NOT HOST_VLC_ARM64 EQUAL -1 AND NOT HOST_VLC_X64 EQUAL -1)
+            list(APPEND VLC_LIB_HINTS /Applications/VLC.app/Contents/MacOS/lib)
+        endif()
     endif()
     find_library(VLC_LIB_DEFAULT vlccore HINTS ${VLC_LIB_HINTS} NO_CACHE)
     if(NOT VLC_LIB_DEFAULT)
         if(APPLE)
-            if (CMAKE_SYSTEM_PROCESSOR STREQUAL arm64)
-                set(VLC_PLATFORM arm64)
-            else()
-                set(VLC_PLATFORM intel64)
-            endif()
-            set(VLC_DOWNLOAD_PATH "${DEPS_DIR}/download/${VLC_NAME}-${VLC_PLATFORM}.dmg")
-            set(VLC_UNPACK_PATH "${DEPS_DIR}/vlc-bin/macosx/${VLC_PLATFORM}")
+            set(VLC_DOWNLOAD_PATH "${DEPS_DIR}/download/${VLC_NAME}-universal.dmg")
+            set(VLC_UNPACK_PATH "${DEPS_DIR}/vlc-bin/macosx/universal")
             set(VLC_LIB_DEFAULT "${VLC_UNPACK_PATH}/libvlccore.dylib")
             if(NOT EXISTS "${VLC_LIB_DEFAULT}")
                 download_if_absent(
-                    "https://download.videolan.org/vlc/last/macosx/${VLC_NAME}-${VLC_PLATFORM}.dmg" 
-                    "${VLC_DOWNLOAD_PATH}")
+                    "https://download.videolan.org/vlc/last/macosx/${VLC_NAME}-universal.dmg"
+                    "${VLC_DOWNLOAD_PATH}"
+                )
                 execute_process(COMMAND hdiutil attach "${VLC_DOWNLOAD_PATH}" 
                     -readonly -nobrowse -noverify -noautofsck 
                     -mountpoint /Volumes/vlcrm_extract)
