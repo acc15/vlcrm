@@ -98,6 +98,12 @@ To specify your own custom directories you can run `cmake` as follows:
 
 ## Running
 
+Plugin must be explicitly enabled using VLC settings interface:
+
+![enable_vlcrm](images/enable_vlcrm.png)
+
+Restart VLC and plugin should activate. 
+
 Check plugin settings page:
 ![vlcrm_settings](images/vlcrm_settings.png)
 
